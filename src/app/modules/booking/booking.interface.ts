@@ -1,5 +1,5 @@
 /* eslint-disable no-unused-vars */
-import { Types } from 'mongoose'
+import { Model, Types } from 'mongoose'
 
 export enum VehicleType {
   Car = 'car',
@@ -16,15 +16,18 @@ export enum VehicleType {
 
 export interface IBooking {
   _id: Types.ObjectId
-  customer: Types.ObjectId
-  service: Types.ObjectId
-  slot: Types.ObjectId
-  vehicleType: VehicleType
-  vehicleBrand: string
-  vehicleModel: string
-  manufacturingYear: number
-  registrationPlate: string
+  user: Types.ObjectId
+  car: Types.ObjectId
+  startTime: string
+  endTime: string
+  date: string
+  totalCost: number
   createdAt: Date
   updatedAt: Date
   isDeleted: boolean
+}
+
+export interface BookingModel extends Model<IBooking> {
+  isBookingExists(id: Types.ObjectId | string): Promise<IBooking | null>
+  isBookingDeleted(): Promise<IBooking | null>
 }

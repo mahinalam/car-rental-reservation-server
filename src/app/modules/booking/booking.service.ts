@@ -1,51 +1,66 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import httpStatus from 'http-status'
 import AppError from '../../errors/appError'
-import { Service } from '../service/service.model'
+import { Car } from '../car/car.model'
 import { User } from '../user/user.model'
 import { IBooking } from './booking.interface'
 import { Booking } from './booking.model'
-import { Slot } from '../slot/slot.model'
+import mongoose from 'mongoose'
 
 // create booking
-const createBookingIntoDB = async (email: string, payload: IBooking) => {
-  const {
-    vehicleType,
-    vehicleBrand,
-    vehicleModel,
-    manufacturingYear,
-    registrationPlate,
-    service,
-    slot,
-  } = payload
+const createBookingAndUpdateCarStatusIntoDB = async (
+  email: string,
+  payload: IBooking,
+) => {
+  const { car, startTime, date } = payload
   const user = await User.findOne({ email })
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, 'User not found!')
   }
-  const serviceInfo = await Service.isServiceExists(service)
-  if (!serviceInfo) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Service not found!')
+  const carInfo = await Car.isCarExists(car)
+  if (!carInfo) {
+    throw new AppError(httpStatus.NOT_FOUND, 'Car not found!')
   }
-  const slotInfo = await Slot.isSlotExists(slot)
-  if (!slotInfo) {
-    throw new AppError(httpStatus.NOT_FOUND, 'Slot not found!')
-  }
+
   const updatedBooking = {
-    service,
-    customer: user._id,
-    slot,
-    vehicleType,
-    vehicleBrand,
-    vehicleModel,
-    manufacturingYear,
-    registrationPlate,
+    date,
+    startTime,
+    user: user._id,
+    car: carInfo._id,
   }
-  const result = (
-    await (
-      await (await Booking.create(updatedBooking)).populate('customer')
-    ).populate('service')
-  ).populate('slot')
-  return result
+
+  const session = await mongoose.startSession()
+  try {
+    session.startTransaction()
+    // update car status (transaction-1)
+    const updatedCar = await Car.findByIdAndUpdate(
+      carInfo._id,
+      { status: 'unavailable' },
+      { new: true, session },
+    )
+    if (!updatedCar) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Failed to upadte car status')
+    }
+
+    // create a booking (transaction-2)
+    const result = await (
+      await (await Booking.create(updatedBooking)).populate('car')
+    ).populate('user')
+    //create a booking
+    if (!result) {
+      throw new AppError(httpStatus.BAD_REQUEST, 'Failed to create Booking')
+    }
+
+    await session.commitTransaction()
+    await session.endSession()
+
+    return result
+  } catch (err: any) {
+    await session.abortTransaction()
+    await session.endSession()
+    throw new Error(err)
+  }
+  // Create the booking
 }
 
 const getAllBookingsFromDB = async (email: string) => {
@@ -57,10 +72,7 @@ const getAllBookingsFromDB = async (email: string) => {
   if (isUserDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, 'User already deleted!')
   }
-  const result = await Booking.find()
-    .populate('customer')
-    .populate('service')
-    .populate('slot')
+  const result = await Booking.find().populate('user').populate('car')
   if (Object.entries(result).length === 0) {
     throw new AppError(httpStatus.NOT_FOUND, 'No Bookings found!')
   }
@@ -75,11 +87,10 @@ const getAllUserBookingsFromDB = async (email: string) => {
   if (isUserDeleted) {
     throw new AppError(httpStatus.NOT_FOUND, 'User already deleted!')
   }
-  const customerId = user._id
-  const result = await Booking.find({ customer: customerId })
-    .populate('customer')
-    .populate('service')
-    .populate('slot')
+  const userId = user._id
+  const result = await Booking.find({ user: userId })
+    .populate('user')
+    .populate('car')
   if (Object.entries(result).length === 0) {
     throw new AppError(httpStatus.NOT_FOUND, "No User's Bookings found!")
   }
@@ -100,7 +111,7 @@ const deleteBookingFromDB = async (id: string) => {
 }
 
 export const BookingService = {
-  createBookingIntoDB,
+  createBookingAndUpdateCarStatusIntoDB,
   getAllBookingsFromDB,
   getAllUserBookingsFromDB,
   updateBookingIntoDB,

@@ -1,12 +1,8 @@
 import { RequestHandler } from 'express'
 import catchAsync from '../../utils/catchAsync'
-// import { UserServices } from './user.service'
 import sendResponse from '../../utils/sendResponse'
 import httpStatus from 'http-status'
-// import { User } from './user.model'
-import AppError from '../../errors/appError'
 import { UserServices } from './user.service'
-import { User } from './user.model'
 
 const createUser: RequestHandler = catchAsync(async (req, res) => {
   const user = req.body
@@ -21,14 +17,6 @@ const createUser: RequestHandler = catchAsync(async (req, res) => {
 })
 const loginUser: RequestHandler = catchAsync(async (req, res) => {
   const loggedUser = req.body
-  //   const zodParseData = StudentValidationSchema.parse(studentData)
-
-  // check if the user is exists
-  const user = await User.find({ email: loggedUser.email })
-  if (!user) {
-    throw new AppError(httpStatus.FORBIDDEN, 'unauthorized access')
-  }
-
   const result = await UserServices.loginUserIntoDB(loggedUser)
   sendResponse(res, {
     statusCodeNumber: httpStatus.OK,

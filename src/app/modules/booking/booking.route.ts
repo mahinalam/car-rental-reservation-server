@@ -11,9 +11,14 @@ router.post(
   '/',
   Auth(USER_ROLE.user),
   validateRequest(BookingValidationSchema.createBookingValidationSchema),
-  BookingController.createBooking,
+  BookingController.createBookingAndUpdateCarStatus,
 )
 router.get('/', Auth(USER_ROLE.admin), BookingController.getAllBookings)
+router.get(
+  '/my-bookings',
+  Auth(USER_ROLE.user),
+  BookingController.getAllUserBookings,
+)
 router.put(
   '/:id',
   validateRequest(BookingValidationSchema.updateBookingValidationSchema),

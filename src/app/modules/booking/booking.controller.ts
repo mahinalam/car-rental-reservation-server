@@ -5,18 +5,23 @@ import httpStatus from 'http-status'
 import { BookingService } from './booking.service'
 
 // create booking
-const createBooking: RequestHandler = catchAsync(async (req, res) => {
-  const booking = req.body
-  const customer = req.user.email
-  const result = await BookingService.createBookingIntoDB(customer, booking)
-  sendResponse(res, {
-    statusCodeNumber: httpStatus.OK,
-    success: true,
-    statusCode: 200,
-    message: 'Booking successful',
-    data: result,
-  })
-})
+const createBookingAndUpdateCarStatus: RequestHandler = catchAsync(
+  async (req, res) => {
+    const booking = req.body
+    const user = req.user.email
+    const result = await BookingService.createBookingAndUpdateCarStatusIntoDB(
+      user,
+      booking,
+    )
+    sendResponse(res, {
+      statusCodeNumber: httpStatus.OK,
+      success: true,
+      statusCode: 200,
+      message: 'Car booked successfully',
+      data: result,
+    })
+  },
+)
 // get all bookings
 const getAllBookings: RequestHandler = catchAsync(async (req, res) => {
   const customer = req.user.email
@@ -70,7 +75,7 @@ const deleteBooking: RequestHandler = catchAsync(async (req, res) => {
 })
 
 export const BookingController = {
-  createBooking,
+  createBookingAndUpdateCarStatus,
   getAllBookings,
   updateBooking,
   deleteBooking,

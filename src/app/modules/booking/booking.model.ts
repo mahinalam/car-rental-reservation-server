@@ -1,30 +1,40 @@
 import { Schema, model } from 'mongoose'
-import { IBooking, VehicleType } from './booking.interface'
+import { BookingModel, IBooking } from './booking.interface'
 
 const bookingsSchema = new Schema<IBooking>(
   {
-    customer: {
+    user: {
       type: Schema.Types.ObjectId,
       required: true,
       trim: true,
       ref: 'User',
     },
-    service: {
+    car: {
       type: Schema.Types.ObjectId,
       required: true,
       trim: true,
-      ref: 'Service',
+      ref: 'Car',
     },
-    slot: { type: Schema.Types.ObjectId, ref: 'Slot', required: true },
-    vehicleType: {
+    startTime: {
       type: String,
-      enum: Object.values(VehicleType),
       required: true,
+      trim: true,
     },
-    vehicleBrand: { type: String, required: true, trim: true },
-    vehicleModel: { type: String, required: true, trim: true },
-    manufacturingYear: { type: Number, required: true },
-    registrationPlate: { type: String, required: true, trim: true },
+    endTime: {
+      type: String,
+      trim: true,
+      default: null,
+    },
+    date: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+    totalCost: {
+      type: Number,
+      trim: true,
+      default: 0,
+    },
     isDeleted: {
       type: Boolean,
       trim: true,
@@ -40,4 +50,12 @@ bookingsSchema.pre('find', function (next) {
   next()
 })
 
-export const Booking = model<IBooking>('Booking', bookingsSchema)
+// check if the booking exists
+bookingsSchema.statics.isBookingExists = async function (
+  id: string,
+): Promise<IBooking | null> {
+  const isBookingExists = await Booking.findById(id)
+  return isBookingExists
+}
+
+export const Booking = model<IBooking, BookingModel>('Booking', bookingsSchema)

@@ -22,7 +22,6 @@ const loginUserIntoDB = async (payload: ILoginUser) => {
   if (!user) {
     throw new AppError(httpStatus.NOT_FOUND, 'This User is not found!')
   }
-
   // checking if the user is already deleted
   const isDeleted = user?.isDeleted
   if (isDeleted) {

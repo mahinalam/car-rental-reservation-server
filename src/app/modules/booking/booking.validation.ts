@@ -4,23 +4,15 @@ import { VehicleType } from './booking.interface'
 // Zod schema for Booking
 const createBookingValidationSchema = z.object({
   body: z.object({
-    //   customer: z.string().min(1, 'Customer ID is required').trim(),
-    service: z.string().min(1, 'Service ID is required').trim(),
-    slot: z.string().min(1, 'Slot ID is required').trim(),
-    vehicleType: z.nativeEnum(VehicleType),
-    vehicleBrand: z.string().min(1, 'Vehicle brand is required').trim(),
-    vehicleModel: z.string().min(1, 'Vehicle model is required').trim(),
-    manufacturingYear: z
-      .number()
-      .int()
-      .positive('Manufacturing year must be a positive integer'),
-    registrationPlate: z
+    car: z.string().length(24, 'Invalid car ID format'),
+    date: z.string().refine((val) => !isNaN(Date.parse(val)), {
+      message: 'Invalid date format',
+    }),
+    startTime: z
       .string()
-      .min(1, 'Registration plate is required')
-      .trim(),
-    isDeleted: z.boolean().optional(),
-    createdAt: z.date().optional(),
-    updatedAt: z.date().optional(),
+      .refine((val) => /^([01]\d|2[0-3]):?([0-5]\d)$/.test(val), {
+        message: 'Invalid time format, must be HH:MM in 24-hour format',
+      }),
   }),
 })
 
